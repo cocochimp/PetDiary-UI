@@ -1,44 +1,34 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="微信名称" prop="nickname">
+      <el-form-item label="用户ID" prop="userId">
         <el-input
-          v-model="queryParams.nickname"
-          placeholder="请输入微信名称"
+          v-model="queryParams.userId"
+          placeholder="请输入用户ID"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="openid" prop="openid">
+      <el-form-item label="内容ID" prop="contentId">
         <el-input
-          v-model="queryParams.openid"
-          placeholder="请输入openid"
+          v-model="queryParams.contentId"
+          placeholder="请输入内容ID"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="session" prop="sessionKey">
+      <el-form-item label="上级评论ID" prop="parentCommentId">
         <el-input
-          v-model="queryParams.sessionKey"
-          placeholder="请输入session"
+          v-model="queryParams.parentCommentId"
+          placeholder="请输入上级评论ID"
           clearable
           @keyup.enter.native="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="性别" prop="gender">
-        <el-select v-model="queryParams.gender" placeholder="请选择性别" clearable>
+      <el-form-item label="评论状态" prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择评论状态" clearable>
           <el-option
-            v-for="dict in dict.type.sys_user_sex"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="用户状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择用户状态" clearable>
-          <el-option
-            v-for="dict in dict.type.sys_user_status"
+            v-for="dict in dict.type.sys_check_status"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -59,7 +49,7 @@
           icon="el-icon-plus"
           size="mini"
           @click="handleAdd"
-          v-hasPermi="['user:user:add']"
+          v-hasPermi="['comment:comment:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -70,7 +60,7 @@
           size="mini"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['user:user:edit']"
+          v-hasPermi="['comment:comment:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -81,7 +71,7 @@
           size="mini"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['user:user:remove']"
+          v-hasPermi="['comment:comment:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -91,32 +81,22 @@
           icon="el-icon-download"
           size="mini"
           @click="handleExport"
-          v-hasPermi="['user:user:export']"
+          v-hasPermi="['comment:comment:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="commentList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="ID" align="center" prop="userId" />
-      <el-table-column label="微信名称" align="center" prop="nickname" />
-      <el-table-column label="openid" align="center" prop="openid" />
-      <el-table-column label="session" align="center" prop="sessionKey" />
-      <el-table-column label="头像地址" align="center" prop="avatar" width="100">
+      <el-table-column label="评论ID" align="center" prop="commentId" />
+      <el-table-column label="用户ID" align="center" prop="userId" />
+      <el-table-column label="内容ID" align="center" prop="contentId" />
+      <el-table-column label="评论内容" align="center" prop="commentInfo" />
+      <el-table-column label="上级评论ID" align="center" prop="parentCommentId" />
+      <el-table-column label="评论状态" align="center" prop="status">
         <template slot-scope="scope">
-          <image-preview :src="scope.row.avatar" :width="50" :height="50"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="性别" align="center" prop="gender">
-        <template slot-scope="scope">
-          <dict-tag :options="dict.type.sys_user_sex" :value="scope.row.gender"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="地址" align="center" prop="address" />
-      <el-table-column label="用户状态" align="center" prop="status">
-        <template slot-scope="scope">
-          <dict-tag :options="dict.type.sys_user_status" :value="scope.row.status"/>
+          <dict-tag :options="dict.type.sys_check_status" :value="scope.row.status"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -126,14 +106,14 @@
             type="text"
             icon="el-icon-edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['user:user:edit']"
+            v-hasPermi="['comment:comment:edit']"
           >修改</el-button>
           <el-button
             size="mini"
             type="text"
             icon="el-icon-delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['user:user:remove']"
+            v-hasPermi="['comment:comment:remove']"
           >删除</el-button>
         </template>
       </el-table-column>
@@ -147,49 +127,30 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改用户列表对话框 -->
+    <!-- 添加或修改评论管理对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="微信名称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="请输入微信名称" />
+        <el-form-item label="用户ID" prop="userId">
+          <el-input v-model="form.userId" placeholder="请输入用户ID" />
         </el-form-item>
-        <el-form-item label="openid" prop="openid">
-          <el-input v-model="form.openid" placeholder="请输入openid" />
+        <el-form-item label="内容ID" prop="contentId">
+          <el-input v-model="form.contentId" placeholder="请输入内容ID" />
         </el-form-item>
-        <el-form-item label="session" prop="sessionKey">
-          <el-input v-model="form.sessionKey" placeholder="请输入session" />
+        <el-form-item label="评论内容" prop="commentInfo">
+          <el-input v-model="form.commentInfo" type="textarea" placeholder="请输入内容" />
         </el-form-item>
-        <el-form-item label="头像地址" prop="avatar">
-          <image-upload v-model="form.avatar"/>
+        <el-form-item label="上级评论ID" prop="parentCommentId">
+          <el-input v-model="form.parentCommentId" placeholder="请输入上级评论ID" />
         </el-form-item>
-        <el-form-item label="性别" prop="gender">
-          <el-select v-model="form.gender" placeholder="请选择性别">
+        <el-form-item label="评论状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择评论状态">
             <el-option
-              v-for="dict in dict.type.sys_user_sex"
+              v-for="dict in dict.type.sys_check_status"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
             ></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入地址" />
-        </el-form-item>
-        <el-form-item label="个人简介" prop="brief">
-          <el-input v-model="form.brief" placeholder="请输入个人简介" />
-        </el-form-item>
-        <el-form-item label="用户状态" prop="status">
-          <el-select v-model="form.status" placeholder="请选择用户状态">
-            <el-option
-              v-for="dict in dict.type.sys_user_status"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="删除标志" prop="delFlag">
-          <el-input v-model="form.delFlag" placeholder="请输入删除标志" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
@@ -204,11 +165,11 @@
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser } from "@/api/user/user";
+import { listComment, getComment, delComment, addComment, updateComment } from "@/api/comment/comment";
 
 export default {
-  name: "User",
-  dicts: ['sys_user_status', 'sys_user_sex'],
+  name: "Comment",
+  dicts: ['sys_check_status', 'sys_status_delete'],
   data() {
     return {
       // 遮罩层
@@ -223,8 +184,8 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 用户列表表格数据
-      userList: [],
+      // 评论管理表格数据
+      commentList: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -233,33 +194,24 @@ export default {
       queryParams: {
         pageNum: 1,
         pageSize: 10,
-        nickname: null,
-        openid: null,
-        sessionKey: null,
-        gender: null,
+        userId: null,
+        contentId: null,
+        commentInfo: null,
+        parentCommentId: null,
         status: null,
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        nickname: [
-          { required: true, message: "微信名称不能为空", trigger: "blur" }
+        userId: [
+          { required: true, message: "用户ID不能为空", trigger: "blur" }
         ],
-        openid: [
-          { required: true, message: "openid不能为空", trigger: "blur" }
-        ],
-        sessionKey: [
-          { required: true, message: "session不能为空", trigger: "blur" }
-        ],
-        avatar: [
-          { required: true, message: "头像地址不能为空", trigger: "blur" }
-        ],
-        gender: [
-          { required: true, message: "性别不能为空", trigger: "change" }
+        contentId: [
+          { required: true, message: "内容ID不能为空", trigger: "blur" }
         ],
         status: [
-          { required: true, message: "用户状态不能为空", trigger: "change" }
+          { required: true, message: "评论状态不能为空", trigger: "change" }
         ],
       }
     };
@@ -268,11 +220,11 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询用户列表列表 */
+    /** 查询评论管理列表 */
     getList() {
       this.loading = true;
-      listUser(this.queryParams).then(response => {
-        this.userList = response.rows;
+      listComment(this.queryParams).then(response => {
+        this.commentList = response.rows;
         this.total = response.total;
         this.loading = false;
       });
@@ -285,15 +237,13 @@ export default {
     // 表单重置
     reset() {
       this.form = {
+        commentId: null,
         userId: null,
-        nickname: null,
-        openid: null,
-        sessionKey: null,
-        avatar: null,
-        gender: null,
-        address: null,
-        brief: null,
+        contentId: null,
+        commentInfo: null,
+        parentCommentId: null,
         status: null,
+        rejectInfo: null,
         delFlag: null,
         createTime: null,
         updateTime: null,
@@ -313,7 +263,7 @@ export default {
     },
     // 多选框选中数据
     handleSelectionChange(selection) {
-      this.ids = selection.map(item => item.userId)
+      this.ids = selection.map(item => item.commentId)
       this.single = selection.length!==1
       this.multiple = !selection.length
     },
@@ -321,30 +271,30 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加用户列表";
+      this.title = "添加评论管理";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset();
-      const userId = row.userId || this.ids
-      getUser(userId).then(response => {
+      const commentId = row.commentId || this.ids
+      getComment(commentId).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改用户列表";
+        this.title = "修改评论管理";
       });
     },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
         if (valid) {
-          if (this.form.userId != null) {
-            updateUser(this.form).then(response => {
+          if (this.form.commentId != null) {
+            updateComment(this.form).then(response => {
               this.$modal.msgSuccess("修改成功");
               this.open = false;
               this.getList();
             });
           } else {
-            addUser(this.form).then(response => {
+            addComment(this.form).then(response => {
               this.$modal.msgSuccess("新增成功");
               this.open = false;
               this.getList();
@@ -355,9 +305,9 @@ export default {
     },
     /** 删除按钮操作 */
     handleDelete(row) {
-      const userIds = row.userId || this.ids;
-      this.$modal.confirm('是否确认删除用户列表编号为"' + userIds + '"的数据项？').then(function() {
-        return delUser(userIds);
+      const commentIds = row.commentId || this.ids;
+      this.$modal.confirm('是否确认删除评论管理编号为"' + commentIds + '"的数据项？').then(function() {
+        return delComment(commentIds);
       }).then(() => {
         this.getList();
         this.$modal.msgSuccess("删除成功");
@@ -365,9 +315,9 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      this.download('user/user/export', {
+      this.download('comment/comment/export', {
         ...this.queryParams
-      }, `user_${new Date().getTime()}.xlsx`)
+      }, `comment_${new Date().getTime()}.xlsx`)
     }
   }
 };
