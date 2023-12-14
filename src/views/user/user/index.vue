@@ -125,9 +125,9 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            @click="handleBan(scope.row)"
             v-hasPermi="['user:user:edit']"
-          >修改</el-button>
+          >封禁</el-button>
           <el-button
             size="mini"
             type="text"
@@ -138,7 +138,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -200,11 +200,64 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <!-- 封禁用户 -->
+    <el-dialog :title="title" :visible.sync="banopen" width="500px" append-to-body>
+        <el-form ref="form" :model="form" :rules="banrules" label-width="80px">
+            <el-form-item label="微信名称" prop="nickname">
+                <el-input v-model="form.nickname" :disabled="true" placeholder="请输入微信名称" />
+            </el-form-item>
+            <el-form-item label="openid" prop="openid">
+                <el-input v-model="form.openid" :disabled="true" placeholder="请输入openid" />
+            </el-form-item>
+            <el-form-item label="session" prop="sessionKey">
+                <el-input v-model="form.sessionKey" :disabled="true" placeholder="请输入session" />
+            </el-form-item>
+            <el-form-item label="头像地址" prop="avatar">
+                <image-upload v-model="form.avatar" :disabled="true"/>
+            </el-form-item>
+            <el-form-item label="性别" prop="gender">
+                <el-select v-model="form.gender" :disabled="true" placeholder="请选择性别">
+                    <el-option
+                            v-for="dict in dict.type.sys_user_sex"
+                            :key="dict.value"
+                            :label="dict.label"
+                            :value="dict.value"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="地址" prop="address">
+                <el-input v-model="form.address" :disabled="true" placeholder="请输入地址" />
+            </el-form-item>
+            <el-form-item label="个人简介" prop="brief">
+                <el-input v-model="form.brief" :disabled="true" placeholder="请输入个人简介" />
+            </el-form-item>
+            <el-form-item label="用户状态" prop="status">
+                <el-select v-model="form.status" placeholder="请选择用户状态">
+                    <el-option
+                            v-for="dict in dict.type.sys_user_status"
+                            :key="dict.value"
+                            :label="dict.label"
+                            :value="dict.value"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="删除标志" prop="delFlag">
+                <el-input v-model="form.delFlag" :disabled="true" placeholder="请输入删除标志" />
+            </el-form-item>
+            <el-form-item label="备注" prop="remark">
+                <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="banForm">确 定</el-button>
+            <el-button @click="cancel">取 消</el-button>
+        </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listUser, getUser, delUser, addUser, updateUser } from "@/api/user/user";
+import { listUser, getUser, delUser, addUser, updateUser, banUser } from "@/api/user/user";
 
 export default {
   name: "User",
@@ -229,6 +282,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 封禁弹出层的显示
+      banopen:false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -261,6 +316,15 @@ export default {
         status: [
           { required: true, message: "用户状态不能为空", trigger: "change" }
         ],
+      },
+      // 封禁表单校验
+      banrules: {
+        status: [
+          { required: true, message: "用户状态不能为空", trigger: "change" }
+        ],
+        remark: [
+          { required: true, message: "头像地址不能为空", trigger: "blur" }
+        ]
       }
     };
   },
@@ -333,6 +397,16 @@ export default {
         this.title = "修改用户列表";
       });
     },
+    /** 封禁按钮操作 */
+    handleBan(row){
+      this.reset();
+      const userId = row.userId || this.ids
+      getUser(userId).then(response => {
+        this.form = response.data;
+        this.banopen = true;
+        this.title = "封禁用户列表";
+      });
+    },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
@@ -350,6 +424,18 @@ export default {
               this.getList();
             });
           }
+        }
+      });
+    },
+    /** 封禁按钮 */
+    banForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+            banUser(this.form).then(response => {
+              this.$modal.msgSuccess("封禁成功");
+              this.banopen = false;
+              this.getList();
+            });
         }
       });
     },
