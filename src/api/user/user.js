@@ -42,3 +42,11 @@ export function delUser(userId) {
     method: 'delete'
   })
 }
+
+export function banUser(data) {
+  return request({
+    url: '/user/user/ban',
+    method: 'put',
+    data: data
+  })
+}
