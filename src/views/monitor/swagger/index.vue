@@ -9,7 +9,7 @@ export default {
   components: { iFrame },
   data() {
     return {
-      url : "http://localhost:8080/swagger-ui/index.html"
+      url : "http://localhost:8080/doc.html"
     }
   }
 }
