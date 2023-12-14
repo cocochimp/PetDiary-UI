@@ -40,6 +40,20 @@ module.exports = {
         pathRewrite: {
           ['^' + process.env.VUE_APP_BASE_API]: ''
         }
+      },
+      '/nacos': {
+        target: `http://localhost:8848`,
+        changeOrigin: true,
+        pathRewrite: {
+          ['^' + '/nacos']: ''
+        }
+      },
+      '/sentinel': {
+        target: `http://localhost:8718`,
+        changeOrigin: true,
+        pathRewrite: {
+          ['^' + '/sentinel']: ''
+        }
       }
     },
     disableHostCheck: true
