@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-row :gutter="20">
       <!--部门数据-->
-      <el-col :span="4" :xs="24">
+<!--      <el-col :span="4" :xs="24">
         <div class="head-container">
           <el-input
             v-model="deptName"
@@ -26,9 +26,10 @@
             @node-click="handleNodeClick"
           />
         </div>
-      </el-col>
+      </el-col>-->
       <!--用户数据-->
-      <el-col :span="20" :xs="24">
+      <el-col :span="24" :xs="24">
+        <!--查询框-->
         <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
           <el-form-item label="用户名称" prop="userName">
             <el-input
@@ -80,6 +81,7 @@
           </el-form-item>
         </el-form>
 
+        <!--按钮框-->
         <el-row :gutter="10" class="mb8">
           <el-col :span="1.5">
             <el-button
@@ -136,14 +138,23 @@
           <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
         </el-row>
 
+        <!--列表-->
         <el-table v-loading="loading" :data="userList" @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="50" align="center" />
-          <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
-          <el-table-column label="用户名称" align="center" key="userName" prop="userName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
-          <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
-          <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible" :show-overflow-tooltip="true" />
-          <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns[4].visible" width="120" />
-          <el-table-column label="状态" align="center" key="status" v-if="columns[5].visible">
+          <el-table-column label="用户id" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
+          <el-table-column label="头像" align="center" prop="avatar" v-if="columns[1].visible" width="100">
+            <template slot-scope="scope">
+              <image-preview :src="scope.row.avatar" :width="50" :height="50"/>
+            </template>
+          </el-table-column>
+          <el-table-column label="用户名" align="center" key="userName" prop="userName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
+<!--          <el-table-column label="角色" align="center" key="userName" prop="userName" v-if="columns[2].visible" :show-overflow-tooltip="true" />-->
+<!--          <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />-->
+<!--          <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible" :show-overflow-tooltip="true" />-->
+          <el-table-column label="角色" align="center" key="" prop="" v-if="columns[3].visible" :show-overflow-tooltip="true" />
+          <el-table-column label="邮箱" align="center" key="email" prop="email" v-if="columns[4].visible" :show-overflow-tooltip="true" />
+          <el-table-column label="联系方式" align="center" key="phonenumber" prop="phonenumber" v-if="columns[5].visible" width="120" />
+          <el-table-column label="状态" align="center" key="status" v-if="columns[6].visible">
             <template slot-scope="scope">
               <el-switch
                 v-model="scope.row.status"
@@ -153,7 +164,7 @@
               ></el-switch>
             </template>
           </el-table-column>
-          <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns[6].visible" width="160">
+          <el-table-column label="创建时间" align="center" prop="createTime" v-if="columns[7].visible" width="160">
             <template slot-scope="scope">
               <span>{{ parseTime(scope.row.createTime) }}</span>
             </template>
@@ -161,7 +172,7 @@
           <el-table-column
             label="操作"
             align="center"
-            width="160"
+            width="460"
             class-name="small-padding fixed-width"
           >
             <template slot-scope="scope" v-if="scope.row.userId !== 1">
@@ -192,6 +203,7 @@
           </el-table-column>
         </el-table>
 
+        <!--展示信息-->
         <pagination
           v-show="total>0"
           :total="total"
@@ -300,6 +312,11 @@
               <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row>
+          <el-form-item label="头像地址" prop="avatar">
+            <image-upload v-model="form.avatar"/>
+          </el-form-item>
         </el-row>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -414,13 +431,16 @@ export default {
       },
       // 列信息
       columns: [
-        { key: 0, label: `用户编号`, visible: true },
-        { key: 1, label: `用户名称`, visible: true },
-        { key: 2, label: `用户昵称`, visible: true },
-        { key: 3, label: `部门`, visible: true },
-        { key: 4, label: `手机号码`, visible: true },
-        { key: 5, label: `状态`, visible: true },
-        { key: 6, label: `创建时间`, visible: true }
+        { key: 0, label: `用户id`, visible: true },
+        { key: 1, label: `头像`, visible: true },
+        { key: 2, label: `用户名`, visible: true },
+        // { key: 1, label: `角色`, visible: true },
+        // { key: 2, label: `邮箱号`, visible: true },
+        { key: 3, label: `角色`, visible: true },
+        { key: 4, label: `邮箱`, visible: true },
+        { key: 5, label: `联系方式`, visible: true },
+        { key: 6, label: `状态`, visible: true },
+        { key: 7, label: `创建时间`, visible: true }
       ],
       // 表单校验
       rules: {
@@ -516,6 +536,7 @@ export default {
         userName: undefined,
         nickName: undefined,
         password: undefined,
+        avatar: undefined,
         phonenumber: undefined,
         email: undefined,
         sex: undefined,
