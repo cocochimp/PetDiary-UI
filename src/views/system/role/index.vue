@@ -123,10 +123,24 @@
           <el-button
             size="mini"
             type="text"
-            icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            icon="el-icon-circle-check"
+            @click="menuAuth(scope.row)"
             v-hasPermi="['system:role:edit']"
-          >修改</el-button>
+          >分配菜单</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-edit"
+            @click="UserInfo(scope.row)"
+            v-hasPermi="['system:role:edit']"
+          >编辑</el-button>
+          <el-button
+            size="mini"
+            type="text"
+            icon="el-icon-circle-check"
+            @click="handleCommand('handleDataScope', scope.row)"
+            v-hasPermi="['system:role:edit']"
+          >数据权限</el-button>
           <el-button
             size="mini"
             type="text"
@@ -134,15 +148,22 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['system:role:remove']"
           >删除</el-button>
-          <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['system:role:edit']">
-            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item command="handleDataScope" icon="el-icon-circle-check"
-                v-hasPermi="['system:role:edit']">数据权限</el-dropdown-item>
-              <el-dropdown-item command="handleAuthUser" icon="el-icon-user"
-                v-hasPermi="['system:role:edit']">分配用户</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
+<!--          <el-button-->
+<!--            size="mini"-->
+<!--            type="text"-->
+<!--            icon="el-icon-user"-->
+<!--            @click="handleCommand('handleAuthUser', scope.row)"-->
+<!--            v-hasPermi="['system:role:edit']"-->
+<!--          >分配用户</el-button>-->
+<!--          <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['system:role:edit']">-->
+<!--            <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>-->
+<!--            <el-dropdown-menu slot="dropdown">-->
+<!--              <el-dropdown-item command="handleDataScope" icon="el-icon-circle-check"-->
+<!--                v-hasPermi="['system:role:edit']">数据权限</el-dropdown-item>-->
+<!--              <el-dropdown-item command="handleAuthUser" icon="el-icon-user"-->
+<!--                v-hasPermi="['system:role:edit']">分配用户</el-dropdown-item>-->
+<!--            </el-dropdown-menu>-->
+<!--          </el-dropdown>-->
         </template>
       </el-table-column>
     </el-table>
@@ -203,6 +224,68 @@
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button type="primary" @click="submitForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 分配菜单 -->
+    <el-dialog :title="title" :visible.sync="openMenuAuth" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="菜单权限">
+          <el-checkbox v-model="menuExpand" @change="handleCheckedTreeExpand($event, 'menu')">展开/折叠</el-checkbox>
+          <el-checkbox v-model="menuNodeAll" @change="handleCheckedTreeNodeAll($event, 'menu')">全选/全不选</el-checkbox>
+          <el-checkbox v-model="form.menuCheckStrictly" @change="handleCheckedTreeConnect($event, 'menu')">父子联动</el-checkbox>
+          <el-tree
+            class="tree-border"
+            :data="menuOptions"
+            show-checkbox
+            ref="menu"
+            node-key="id"
+            :check-strictly="!form.menuCheckStrictly"
+            empty-text="加载中，请稍候"
+            :props="defaultProps"
+          ></el-tree>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="submitFormMenuAuth">确 定</el-button>
+        <el-button @click="cancelMenuAuth">取 消</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 编辑 -->
+    <el-dialog :title="title" :visible.sync="openUser" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="角色名称" prop="roleName">
+          <el-input v-model="form.roleName" placeholder="请输入角色名称" />
+        </el-form-item>
+        <el-form-item prop="roleKey">
+          <span slot="label">
+            <el-tooltip content="控制器中定义的权限字符，如：@PreAuthorize(`@ss.hasRole('admin')`)" placement="top">
+              <i class="el-icon-question"></i>
+            </el-tooltip>
+            权限字符
+          </span>
+          <el-input v-model="form.roleKey" placeholder="请输入权限字符" />
+        </el-form-item>
+        <el-form-item label="角色顺序" prop="roleSort">
+          <el-input-number v-model="form.roleSort" controls-position="right" :min="0" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_normal_disable"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="sumbitUser">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
@@ -278,6 +361,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      openMenuAuth: false,
+      openUser: false,
       // 是否显示弹出层（数据权限）
       openDataScope: false,
       menuExpand: false,
@@ -292,18 +377,18 @@ export default {
           value: "1",
           label: "全部数据权限"
         },
-        {
-          value: "2",
-          label: "自定数据权限"
-        },
-        {
-          value: "3",
-          label: "本部门数据权限"
-        },
-        {
-          value: "4",
-          label: "本部门及以下数据权限"
-        },
+        // {
+        //   value: "2",
+        //   label: "自定数据权限"
+        // },
+        // {
+        //   value: "3",
+        //   label: "本部门数据权限"
+        // },
+        // {
+        //   value: "4",
+        //   label: "本部门及以下数据权限"
+        // },
         {
           value: "5",
           label: "仅本人数据权限"
@@ -412,6 +497,11 @@ export default {
     // 取消按钮（数据权限）
     cancelDataScope() {
       this.openDataScope = false;
+      this.reset();
+    },
+    // 取消按钮（菜单权限）
+    cancelMenuAuth() {
+      this.openMenuAuth = false;
       this.reset();
     },
     // 表单重置
@@ -525,6 +615,37 @@ export default {
         this.title = "修改角色";
       });
     },
+    /** 菜单权限 */
+    menuAuth(row) {
+      this.reset();
+      const roleId = row.roleId || this.ids
+      const roleMenu = this.getRoleMenuTreeselect(roleId);
+      getRole(roleId).then(response => {
+        this.form = response.data;
+        this.openMenuAuth = true;
+        this.$nextTick(() => {
+          roleMenu.then(res => {
+            let checkedKeys = res.checkedKeys
+            checkedKeys.forEach((v) => {
+              this.$nextTick(()=>{
+                this.$refs.menu.setChecked(v, true ,false);
+              })
+            })
+          });
+        });
+        this.title = "菜单权限";
+      });
+    },
+    /** 角色编辑 */
+    UserInfo(row) {
+      this.reset();
+      const roleId = row.roleId || this.ids
+      getRole(roleId).then(response => {
+        this.form = response.data;
+        this.openUser = true;
+        this.title = "角色编辑";
+      });
+    },
     /** 选择角色权限范围触发 */
     dataScopeSelectChange(value) {
       if(value !== '2') {
@@ -583,6 +704,41 @@ export default {
           this.getList();
         });
       }
+    },
+    /** 菜单管理提交按钮 */
+    submitFormMenuAuth: function() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          if (this.form.roleId != undefined) {
+            this.form.menuIds = this.getMenuAllCheckedKeys();
+            updateRole(this.form).then(response => {
+              this.$modal.msgSuccess("修改成功");
+              this.openMenuAuth = false;
+              this.getList();
+            });
+          } else {
+            this.form.menuIds = this.getMenuAllCheckedKeys();
+            addRole(this.form).then(response => {
+              this.$modal.msgSuccess("新增成功");
+              this.openMenuAuth = false;
+              this.getList();
+            });
+          }
+        }
+      });
+    },
+    /** 菜单管理提交按钮 */
+    sumbitUser: function() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+            updateRole(this.form).then(response => {
+              this.form.menuIds = null;
+              this.$modal.msgSuccess("修改成功");
+              this.openUser = false;
+              this.getList();
+            });
+          }
+      });
     },
     /** 删除按钮操作 */
     handleDelete(row) {

@@ -179,10 +179,24 @@
               <el-button
                 size="mini"
                 type="text"
+                icon="el-icon-circle-check"
+                @click="handleCommand('handleAuthRole', scope.row)"
+                v-hasPermi="['system:user:edit']"
+              >分配角色</el-button>
+              <el-button
+                size="mini"
+                type="text"
+                icon="el-icon-key"
+                @click="handleCommand('handleResetPwd', scope.row)"
+                v-hasPermi="['system:user:resetPwd']"
+              >重置密码</el-button>
+              <el-button
+                size="mini"
+                type="text"
                 icon="el-icon-edit"
                 @click="handleUpdate(scope.row)"
                 v-hasPermi="['system:user:edit']"
-              >修改</el-button>
+              >编辑</el-button>
               <el-button
                 size="mini"
                 type="text"
@@ -190,15 +204,6 @@
                 @click="handleDelete(scope.row)"
                 v-hasPermi="['system:user:remove']"
               >删除</el-button>
-              <el-dropdown size="mini" @command="(command) => handleCommand(command, scope.row)" v-hasPermi="['system:user:resetPwd', 'system:user:edit']">
-                <el-button size="mini" type="text" icon="el-icon-d-arrow-right">更多</el-button>
-                <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item command="handleResetPwd" icon="el-icon-key"
-                    v-hasPermi="['system:user:resetPwd']">重置密码</el-dropdown-item>
-                  <el-dropdown-item command="handleAuthRole" icon="el-icon-circle-check"
-                    v-hasPermi="['system:user:edit']">分配角色</el-dropdown-item>
-                </el-dropdown-menu>
-              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -219,13 +224,26 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
         <el-row>
           <el-col :span="12">
-            <el-form-item label="用户昵称" prop="nickName">
-              <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
+            <el-form-item label="用户名" prop="nickName">
+              <el-input v-model="form.nickName" placeholder="请输入用户名" maxlength="30" />
             </el-form-item>
           </el-col>
+<!--          <el-col :span="12">-->
+<!--            <el-form-item label="归属部门" prop="deptId">-->
+<!--              <treeselect v-model="form.deptId" :options="deptOptions" :show-count="true" placeholder="请选择归属部门" />-->
+<!--            </el-form-item>-->
+<!--          </el-col>-->
           <el-col :span="12">
-            <el-form-item label="归属部门" prop="deptId">
-              <treeselect v-model="form.deptId" :options="deptOptions" :show-count="true" placeholder="请选择归属部门" />
+            <el-form-item label="角色">
+              <el-select v-model="form.roleIds" multiple placeholder="请选择角色">
+                <el-option
+                  v-for="item in roleOptions"
+                  :key="item.roleId"
+                  :label="item.roleName"
+                  :value="item.roleId"
+                  :disabled="item.status == 1"
+                ></el-option>
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -255,7 +273,7 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-            <el-form-item label="用户性别">
+            <el-form-item label="性别">
               <el-select v-model="form.sex" placeholder="请选择性别">
                 <el-option
                   v-for="dict in dict.type.sys_user_sex"
@@ -278,34 +296,21 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="岗位">
-              <el-select v-model="form.postIds" multiple placeholder="请选择岗位">
-                <el-option
-                  v-for="item in postOptions"
-                  :key="item.postId"
-                  :label="item.postName"
-                  :value="item.postId"
-                  :disabled="item.status == 1"
-                ></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="角色">
-              <el-select v-model="form.roleIds" multiple placeholder="请选择角色">
-                <el-option
-                  v-for="item in roleOptions"
-                  :key="item.roleId"
-                  :label="item.roleName"
-                  :value="item.roleId"
-                  :disabled="item.status == 1"
-                ></el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+<!--        <el-row>-->
+<!--          <el-col :span="12">-->
+<!--            <el-form-item label="岗位">-->
+<!--              <el-select v-model="form.postIds" multiple placeholder="请选择岗位">-->
+<!--                <el-option-->
+<!--                  v-for="item in postOptions"-->
+<!--                  :key="item.postId"-->
+<!--                  :label="item.postName"-->
+<!--                  :value="item.postId"-->
+<!--                  :disabled="item.status == 1"-->
+<!--                ></el-option>-->
+<!--              </el-select>-->
+<!--            </el-form-item>-->
+<!--          </el-col>-->
+<!--        </el-row>-->
         <el-row>
           <el-col :span="24">
             <el-form-item label="备注">
@@ -314,7 +319,7 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-form-item label="头像地址" prop="avatar">
+          <el-form-item label="头像" prop="avatar">
             <image-upload v-model="form.avatar"/>
           </el-form-item>
         </el-row>
@@ -385,8 +390,8 @@ export default {
       userList: null,
       // 弹出层标题
       title: "",
-      // 部门树选项
-      deptOptions: undefined,
+      // // 部门树选项
+      // deptOptions: undefined,
       // 是否显示弹出层
       open: false,
       // 部门名称
@@ -396,7 +401,7 @@ export default {
       // 日期范围
       dateRange: [],
       // 岗位选项
-      postOptions: [],
+      // postOptions: [],
       // 角色选项
       roleOptions: [],
       // 表单参数
@@ -427,7 +432,7 @@ export default {
         userName: undefined,
         phonenumber: undefined,
         status: undefined,
-        deptId: undefined
+        // deptId: undefined
       },
       // 列信息
       columns: [
@@ -509,7 +514,7 @@ export default {
     },
     // 节点单击事件
     handleNodeClick(data) {
-      this.queryParams.deptId = data.id;
+      // this.queryParams.deptId = data.id;
       this.handleQuery();
     },
     // 用户状态修改
@@ -532,7 +537,7 @@ export default {
     reset() {
       this.form = {
         userId: undefined,
-        deptId: undefined,
+        // deptId: undefined,
         userName: undefined,
         nickName: undefined,
         password: undefined,
@@ -542,7 +547,7 @@ export default {
         sex: undefined,
         status: "0",
         remark: undefined,
-        postIds: [],
+        // postIds: [],
         roleIds: []
       };
       this.resetForm("form");
@@ -556,7 +561,7 @@ export default {
     resetQuery() {
       this.dateRange = [];
       this.resetForm("queryForm");
-      this.queryParams.deptId = undefined;
+      // this.queryParams.deptId = undefined;
       this.$refs.tree.setCurrentKey(null);
       this.handleQuery();
     },
@@ -583,7 +588,7 @@ export default {
     handleAdd() {
       this.reset();
       getUser().then(response => {
-        this.postOptions = response.posts;
+        // this.postOptions = response.posts;
         this.roleOptions = response.roles;
         this.open = true;
         this.title = "添加用户";
@@ -596,9 +601,9 @@ export default {
       const userId = row.userId || this.ids;
       getUser(userId).then(response => {
         this.form = response.data;
-        this.postOptions = response.posts;
+        // this.postOptions = response.posts;
         this.roleOptions = response.roles;
-        this.$set(this.form, "postIds", response.postIds);
+        // this.$set(this.form, "postIds", response.postIds);
         this.$set(this.form, "roleIds", response.roleIds);
         this.open = true;
         this.title = "修改用户";
