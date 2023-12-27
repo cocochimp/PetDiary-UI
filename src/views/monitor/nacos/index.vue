@@ -9,7 +9,8 @@ export default {
   components: { iFrame },
   data() {
     return {
-      url : '/nacos' + "/nacos/#"
+      // url : '/nacos' + "/nacos/#"
+      url: 'http://localhost:8848/nacos/#'
     }
   }
 }

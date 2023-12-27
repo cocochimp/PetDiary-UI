@@ -9,7 +9,8 @@ export default {
   components: { iFrame },
   data() {
     return {
-      url : '/sentinel' + "/#/dashboard/home"
+      // url : '/sentinel' + "/#/dashboard/home"
+      url:'http://localhost:8718'
     }
   }
 }
