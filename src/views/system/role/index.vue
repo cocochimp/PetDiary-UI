@@ -492,6 +492,9 @@ export default {
     // 取消按钮
     cancel() {
       this.open = false;
+      this.openMenuAuth = false;
+      this.openUser = false;
+      this.openDataScope = false;
       this.reset();
     },
     // 取消按钮（数据权限）
