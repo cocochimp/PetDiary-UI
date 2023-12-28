@@ -148,10 +148,11 @@
             </template>
           </el-table-column>
           <el-table-column label="用户名" align="center" key="userName" prop="userName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
-<!--          <el-table-column label="角色" align="center" key="userName" prop="userName" v-if="columns[2].visible" :show-overflow-tooltip="true" />-->
-<!--          <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />-->
-<!--          <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible" :show-overflow-tooltip="true" />-->
-          <el-table-column label="角色" align="center" key="" prop="" v-if="columns[3].visible" :show-overflow-tooltip="true" />
+          <el-table-column label="角色" align="center" key="roleId" prop="roleId" v-if="columns[3].visible" :show-overflow-tooltip="true">
+            <template slot-scope="scope">
+              <dict-tag :options="dict.type.sys_role" :value="scope.row.roleId"/>
+            </template>
+          </el-table-column>
           <el-table-column label="邮箱" align="center" key="email" prop="email" v-if="columns[4].visible" :show-overflow-tooltip="true" />
           <el-table-column label="联系方式" align="center" key="phonenumber" prop="phonenumber" v-if="columns[5].visible" width="120" />
           <el-table-column label="状态" align="center" key="status" v-if="columns[6].visible">
@@ -370,7 +371,7 @@ import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
   name: "User",
-  dicts: ['sys_normal_disable', 'sys_user_sex'],
+  dicts: ['sys_normal_disable', 'sys_user_sex', 'sys_role'],
   components: { Treeselect },
   data() {
     return {
@@ -539,6 +540,7 @@ export default {
         userId: undefined,
         // deptId: undefined,
         userName: undefined,
+        roleId: undefined,
         nickName: undefined,
         password: undefined,
         avatar: undefined,
