@@ -35,6 +35,15 @@ export function updateLive(data) {
   })
 }
 
+// 封禁直播
+export function banLive(data) {
+  return request({
+    url: '/live/live/ban',
+    method: 'put',
+    data: data
+  })
+}
+
 // 删除直播
 export function delLive(liveId) {
   return request({

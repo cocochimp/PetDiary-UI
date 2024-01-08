@@ -35,6 +35,15 @@ export function updateVideo(data) {
   })
 }
 
+// 封禁视频管理
+export function banVideo(data) {
+  return request({
+    url: '/video/video/ban',
+    method: 'put',
+    data: data
+  })
+}
+
 // 删除视频管理
 export function delVideo(contentId) {
   return request({

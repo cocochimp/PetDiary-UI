@@ -105,9 +105,9 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            @click="handleBan(scope.row)"
             v-hasPermi="['comment:comment:edit']"
-          >修改</el-button>
+          >封禁/恢复</el-button>
           <el-button
             size="mini"
             type="text"
@@ -118,7 +118,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -161,11 +161,33 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+    <!-- 添加或修改评论管理对话框 -->
+    <el-dialog :title="title" :visible.sync="banOpen" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="banRules" label-width="80px">
+        <el-form-item label="评论状态" prop="status">
+          <el-select v-model="form.status" placeholder="请选择评论状态">
+            <el-option
+              v-for="dict in dict.type.sys_check_status"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="封禁内容" prop="rejectInfo">
+          <el-input v-model="form.rejectInfo" type="textarea" placeholder="请输入封禁原因等信息" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="banForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listComment, getComment, delComment, addComment, updateComment } from "@/api/comment/comment";
+import { listComment, getComment, delComment, addComment, updateComment, banComment} from "@/api/comment/comment";
 
 export default {
   name: "Comment",
@@ -190,6 +212,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 是否显示封禁弹出层
+      banOpen: false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -213,6 +237,15 @@ export default {
         status: [
           { required: true, message: "评论状态不能为空", trigger: "change" }
         ],
+      },
+      // 表单校验
+      banRules: {
+        rejectInfo: [
+          { required: true, message: "封禁内容不能为空", trigger: "blur" }
+        ],
+        status: [
+          { required: true, message: "内容状态不能为空", trigger: "change" }
+        ],
       }
     };
   },
@@ -232,6 +265,7 @@ export default {
     // 取消按钮
     cancel() {
       this.open = false;
+      this.banOpen = false;
       this.reset();
     },
     // 表单重置
@@ -283,6 +317,16 @@ export default {
         this.title = "修改评论管理";
       });
     },
+    /** 封禁按钮操作 */
+    handleBan(row) {
+      this.reset();
+      const commentId = row.commentId || this.ids
+      getComment(commentId).then(response => {
+        this.form = response.data;
+        this.banOpen = true;
+        this.title = "修改封禁管理";
+      });
+    },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
@@ -300,6 +344,18 @@ export default {
               this.getList();
             });
           }
+        }
+      });
+    },
+    /** 封禁按钮 */
+    banForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          banComment(this.form).then(response => {
+            this.$modal.msgSuccess("封禁成功");
+            this.banOpen = false;
+            this.getList();
+          });
         }
       });
     },

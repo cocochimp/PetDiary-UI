@@ -35,6 +35,15 @@ export function updateComment(data) {
   })
 }
 
+// 封禁评论管理
+export function banComment(data) {
+  return request({
+    url: '/comment/comment/ban',
+    method: 'put',
+    data: data
+  })
+}
+
 // 删除评论管理
 export function delComment(commentId) {
   return request({

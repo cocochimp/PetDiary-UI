@@ -100,9 +100,9 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            @click="handleBan(scope.row)"
             v-hasPermi="['picture:picture:edit']"
-          >修改</el-button>
+          >封禁/恢复</el-button>
           <el-button
             size="mini"
             type="text"
@@ -146,11 +146,33 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 添加或修改图文管理对话框 -->
+    <el-dialog :title="title" :visible.sync="banOpen" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="banRules" label-width="80px">
+        <el-form-item label="内容状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_content_status"
+              :key="dict.value"
+              :label="dict.value"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="封禁内容" prop="rejectInfo">
+          <el-input v-model="form.rejectInfo" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="banForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listPicture, getPicture, delPicture, addPicture, updatePicture } from "@/api/picture/picture";
+import { listPicture, getPicture, delPicture, addPicture, updatePicture, banPicture} from "@/api/picture/picture";
 
 export default {
   name: "Picture",
@@ -175,6 +197,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 是否显示封禁弹出层
+      banOpen: false,
       // 查询参数
       queryParams: {
         pageNum: 1,
@@ -200,6 +224,15 @@ export default {
         status: [
           { required: true, message: "内容状态不能为空", trigger: "change" }
         ],
+      },
+      // 表单校验
+      banRules: {
+        rejectInfo: [
+          { required: true, message: "封禁内容不能为空", trigger: "blur" }
+        ],
+        status: [
+          { required: true, message: "内容状态不能为空", trigger: "change" }
+        ],
       }
     };
   },
@@ -219,6 +252,7 @@ export default {
     // 取消按钮
     cancel() {
       this.open = false;
+      this.banOpen = true;
       this.reset();
     },
     // 表单重置
@@ -271,6 +305,16 @@ export default {
         this.title = "修改图文管理";
       });
     },
+    /** 封禁按钮操作 */
+    handleBan(row) {
+      this.reset();
+      const contentId = row.contentId || this.ids
+      getPicture(contentId).then(response => {
+        this.form = response.data;
+        this.banOpen = true;
+        this.title = "封禁图文";
+      });
+    },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
@@ -288,6 +332,18 @@ export default {
               this.getList();
             });
           }
+        }
+      });
+    },
+    /** 封禁按钮 */
+    banForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          banPicture(this.form).then(response => {
+            this.$modal.msgSuccess("封禁成功");
+            this.banOpen = false;
+            this.getList();
+          });
         }
       });
     },

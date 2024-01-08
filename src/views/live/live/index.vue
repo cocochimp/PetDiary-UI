@@ -126,9 +126,9 @@
             size="mini"
             type="text"
             icon="el-icon-edit"
-            @click="handleUpdate(scope.row)"
+            @click="handleBan(scope.row)"
             v-hasPermi="['live:live:edit']"
-          >修改</el-button>
+          >封禁/解禁</el-button>
           <el-button
             size="mini"
             type="text"
@@ -139,7 +139,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -184,11 +184,34 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <!-- 添加或修改直播对话框 -->
+    <el-dialog :title="title" :visible.sync="ban" width="500px" append-to-body>
+      <el-form ref="form" :model="form" :rules="banRules" label-width="80px">
+        <el-form-item label="直播状态" prop="status">
+          <el-radio-group v-model="form.status">
+            <el-radio
+              v-for="dict in dict.type.sys_live_status"
+              :key="dict.value"
+              :label="dict.value"
+              v-if="dict.value === '0' || dict.value === '1'"
+            >{{dict.label}}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="封禁内容" prop="banInfo">
+          <el-input v-model="form.banInfo" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="banForm">确 定</el-button>
+        <el-button @click="cancel">取 消</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { listLive, getLive, delLive, addLive, updateLive } from "@/api/live/live";
+import { listLive, getLive, delLive, addLive, updateLive, banLive} from "@/api/live/live";
 
 export default {
   name: "Live",
@@ -213,6 +236,8 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
+      // 拉黑封禁弹出层
+      ban: false,
       // 封禁内容时间范围
       daterangeCreateTime: [],
       // 查询参数
@@ -241,6 +266,15 @@ export default {
         status: [
           { required: true, message: "直播状态不能为空", trigger: "change" }
         ],
+      },
+      // 表单校验
+      banRules: {
+        banInfo: [
+          { required: true, message: "封禁内容不能为空", trigger: "blur" }
+        ],
+        status: [
+          { required: true, message: "直播状态不能为空", trigger: "change" }
+        ],
       }
     };
   },
@@ -265,6 +299,7 @@ export default {
     // 取消按钮
     cancel() {
       this.open = false;
+      this.ban = false;
       this.reset();
     },
     // 表单重置
@@ -316,6 +351,16 @@ export default {
         this.title = "修改直播";
       });
     },
+    /** 拉黑按钮操作 */
+    handleBan(row) {
+      this.reset();
+      const liveId = row.liveId || this.ids
+      getLive(liveId).then(response => {
+        this.form = response.data;
+        this.ban = true;
+        this.title = "封禁直播";
+      });
+    },
     /** 提交按钮 */
     submitForm() {
       this.$refs["form"].validate(valid => {
@@ -333,6 +378,18 @@ export default {
               this.getList();
             });
           }
+        }
+      });
+    },
+    /** 封禁按钮 */
+    banForm() {
+      this.$refs["form"].validate(valid => {
+        if (valid) {
+          banLive(this.form).then(response => {
+            this.$modal.msgSuccess("封禁成功");
+            this.ban = false;
+            this.getList();
+          });
         }
       });
     },

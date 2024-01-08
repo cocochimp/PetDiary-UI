@@ -35,6 +35,15 @@ export function updatePicture(data) {
   })
 }
 
+// 拉黑图文管理
+export function banPicture(data) {
+  return request({
+    url: '/picture/picture/ban',
+    method: 'put',
+    data: data
+  })
+}
+
 // 删除图文管理
 export function delPicture(contentId) {
   return request({
